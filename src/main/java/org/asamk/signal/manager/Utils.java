@@ -18,6 +18,7 @@ import org.whispersystems.signalservice.api.util.PhoneNumberFormatter;
 import org.whispersystems.signalservice.api.util.StreamDetails;
 import org.whispersystems.signalservice.internal.util.Base64;
 
+import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -29,6 +30,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.net.URLConnection;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.file.Files;
@@ -60,12 +62,15 @@ class Utils {
     }
 
     static SignalServiceAttachmentStream createAttachment(File attachmentFile) throws IOException {
-        InputStream attachmentStream = new FileInputStream(attachmentFile);
-        final long attachmentSize = attachmentFile.length();
-        String mime = Files.probeContentType(attachmentFile.toPath());
+        InputStream bufferedStream = new BufferedInputStream(new FileInputStream(attachmentFile));
+        String mime = URLConnection.guessContentTypeFromStream(bufferedStream);
         if (mime == null) {
             mime = "application/octet-stream";
         }
+        bufferedStream.close();
+
+        InputStream attachmentStream = new FileInputStream(attachmentFile);
+        final long attachmentSize = attachmentFile.length();
         // TODO mabybe add a parameter to set the voiceNote, preview, width, height and caption option
         Optional<byte[]> preview = Optional.absent();
         Optional<String> caption = Optional.absent();
